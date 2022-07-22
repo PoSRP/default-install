@@ -1,0 +1,14 @@
+UpdateInterval=1
+TimeScale=0
+Size=16
+Mode=-1
+Frame=0
+Border=1
+Bars=1
+PerCore=0
+TrackedCore=0
+InTerminal=1
+StartupNotification=0
+ColorMode=0
+BarsColor=rgb(192,97,203)
+

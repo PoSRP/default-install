@@ -1,0 +1,38 @@
+# Set the default terminal type
+set -g default-terminal "screen-256color"
+
+# Disable escape charater timeout
+set -sg escape-time 0
+
+# Force a decent repeat delay
+set -g repeat-time 3000
+
+# How long tmux displays messages for 
+set -g display-time 3000
+
+# Close the session when window closes
+set -g remain-on-exit off
+
+# No automatic renaming
+setw -g allow-rename off
+
+# source config with C-b + r
+bind-key r source-file ~/.tmux.conf \; display-message "~/.tmux.conf reloaded"
+
+# enable mouse mode (>tmux 2.1)
+# clickable windows, panes, resizable panes
+set -g mouse on
+
+# Shift arrow to switch windows
+bind -n S-Left  previous-window
+bind -n S-Right next-window
+
+# turn off all the bell sounds
+set -g visual-activity off
+set -g visual-bell off
+set -g visual-silence off
+setw -g monitor-activity off
+set -g bell-action none
+
+# Disable the status bar
+set -g status off

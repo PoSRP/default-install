@@ -1,0 +1,10 @@
+build/*
+__pycache__
+venv
+.cproject
+.project
+.settings
+.metadata
+.idea
+.cache
+.ccache
