@@ -435,6 +435,7 @@ install_ros2_humble () {
   printf "Installing ROS2 Extras ............................................. "
   apt-get install -y \
     python3-colcon-ros \
+    python3-colcon-bash \
     python3-colcon-zsh \
     python3-rosdep &> /dev/null
   rosdep init &> /dev/null
