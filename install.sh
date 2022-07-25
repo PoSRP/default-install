@@ -364,8 +364,9 @@ install_ros2_humble () {
   apt-get install -y locales &> /dev/null
   locale-gen en_US en_US.UTF-8 &> /dev/null
   update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 &> /dev/null
-  echo "# User added - ROS2 language requirement" >> /home/$user/.zshrc
+  echo "# User added - ROS2" >> /home/$user/.zshrc
   echo "export LANG=en_US.UTF-8" >> /home/$user/.zshrc
+  echo "export ROS_DOMAIN_ID=0" >> /home/$user/.zshrc
   curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o \
     /usr/share/keyrings/ros-archive-keyring.gpg &> /dev/null
   echo "deb [arch=$(dpkg --print-architecture) \
