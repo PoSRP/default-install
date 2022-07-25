@@ -415,6 +415,15 @@ install_ros2_humble () {
   printf "Installing ROS2 Humble ............................................. "
   apt-get install -y ros-humble-desktop &> /dev/null
   printf "OK\n"
+
+  printf "Installing ROS2 Extras ............................................. "
+  apt-get install -y \
+    python3-colcon-ros \
+    python3-colcon-zsh \
+    python3-rosdep &> /dev/null
+  rosdep init &> /dev/null
+  su $user -c "rosdep update &> /dev/null"
+  printf "OK\n"
 }
 
 install_kicad6 () {
