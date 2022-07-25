@@ -364,6 +364,22 @@ install_terminal () {
     /home/$user/.config/alacritty/alacritty.yml"
   su $user sh -c "cp -f $working_dir/tmux.default /home/$user/.tmux.conf"
   printf "OK\n"
+
+  printf "Setting alacritty as default user terminal ......................... "
+  xdg_alacritty_desktop="\
+[Desktop Entry]
+NoDisplay=true
+Version=1.0
+Encoding=UTF-8
+Type-X-XFCE-Helper
+X-XFCE-Category=TerminalEmulator
+X-XFCE-CommandsWithParameter=/usr/local/bin/alacritty \"%s\"
+X-XFCE-Commands=/usr/local/bin/alacritty
+Icon=alacritty
+Name=alacritty"
+  printf "%s" $xdg_alacritty_desktop >> /home/$user/.local/share/xfce4/helpers/alacritty-TerminalEmulator.desktop
+  printf "TerminalEmulator=alacritty-TerminalEmulator.desktop" >> /home/$user/.config/xfce4/helpers.rc
+  printf "OK\n"
 }
 
 install_user_aliases () {
