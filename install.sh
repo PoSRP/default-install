@@ -301,12 +301,46 @@ install_meslo_lgs_font () {
   printf "OK\n"
 }
 
+install_alacritty_source () {
+  printf "Installing alacritty from source ................................... "
+
+  # Clone repo
+  cd /home/$user
+  su $user -c "git clone https://github.com/alacritty/alacritty.git"
+  cd /home/$user/alacritty
+
+  # Install rustup
+  su $user -c "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
+  source /home/$user/.cargo/env
+  su $user -c "rustup override set stable"
+  su $user -c "rustup update stable"
+
+  # Build alacritty
+  apt-get install -y cmake pkg-config libfreetype6-dev libfontconfig1-dev libxcb-xfixes0-dev libxkbcommon-dev python3
+  su $user -c "cargo build --release"
+
+  # Add terminfo
+  if [[ ! $(infocmp alacritty) ]]; then
+    tic -xe alacritty,alacritty-direct extra/alacritty.info
+  fi
+
+  # Add desktop entry
+  cp target/release/alacritty /usr/local/bin
+  cp extra/logo/alacritty-term.svg /usr/share/pixmaps/Alacritty.svg
+  desktop-file-install extra/linux/Alacritty.desktop
+  update-desktop-database
+
+  cd $working_dir
+  printf "OK\n"
+}
+
 install_terminal () {
   # Add check for zsh installed in dpkg
 
-  printf "Installing alacritty from snap ..................................... "
-  snap install alacritty --classic &> /dev/null
-  printf "OK\n"
+  # printf "Installing alacritty from snap ..................................... "
+  # snap install alacritty --classic &> /dev/null
+  # printf "OK\n"
+  install_alacritty_source
 
   printf "Downloading oh-my-zsh install script ...............................\n"
   wget https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh\
