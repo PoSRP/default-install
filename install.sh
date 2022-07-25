@@ -186,12 +186,11 @@ replace_firefox_snap_with_dpkg () {
   add-apt-repository -y ppa:mozillateam/firefox-next 
   
   firefox_apt_preference="\
-# I do not want to use the firefox snap as it breaks opening out-of-sandbox local files
 Package: firefox*
 Pin: release o=Ubuntu*
 Pin-Priority: -1"
 
-  printf $firefox_apt_preference > /etc/apt/preferences.d/firefox-no-snap
+  printf $firefox_apt_preference >> /etc/apt/preferences.d/firefox-no-snap
   apt-get update
   apt-get install -y firefox
 }
