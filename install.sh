@@ -1,6 +1,35 @@
 #!/bin/bash
 
 
+git_ssh_setup () {
+  apt-get install git openssh-client
+
+  printf "Adding git configuration files ..................................... "
+
+  if [[ ! -f $PWD/ssh/id_rsa || ! -f $PWD/ssh/id_rsa.pub ]]; then
+    printf "\nMissing base SSH key for github setup!"
+    exit 1
+  fi
+
+  home_git_config="\
+[user]
+  name = $user
+  email = $user@kobots.dk"
+
+  ssh_git_config="\
+Host github.com-kobots-*
+  User $user@kobots.dk
+  Hostname github.com
+  PreferredAuthentication publickey
+  IdentityFile /home/$user/.ssh/id_rsa.pub
+  IdentitiesOnly yes"
+  
+  printf "%s" $home_git_config >> /home/$user/.gitconfig
+  printf "%s" $ssh_git_config >> /home/$user/.ssh/config
+
+  printf "OK\n"
+}
+
 user_no_sudo () {
   printf "Adding user to NO PASSWORD SUDO [NOT SECURE] ....................... "
   printf "%s ALL=(ALL) NOPASSWD:ALL\n" $user > /etc/sudoers.d/$user-nopasswd
