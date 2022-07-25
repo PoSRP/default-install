@@ -66,7 +66,7 @@ install_apt_packages_essential () {
     "
 
   printf "Installing apt packages [essentials] ............................... "
-  apt install -y $apt_essentials &> /dev/null
+  apt-get install -y $apt_essentials &> /dev/null
   printf "OK\n"
 }
 
@@ -97,7 +97,7 @@ install_apt_packages_devtools () {
     "
 
   printf "Installing apt packages [devtools] ................................. "
-  apt install -y $apt_devtools &> /dev/null
+  apt-get install -y $apt_devtools &> /dev/null
   printf "OK\n"
 }
 
@@ -127,7 +127,7 @@ install_apt_packages_nice_desktop () {
     "
 
   printf "Installing apt packages [desktop apps] ............................. "
-  apt install -y $apt_nice_desktop_apps &> /dev/null
+  apt-get install -y $apt_nice_desktop_apps &> /dev/null
   printf "OK\n"
 }
 
@@ -144,7 +144,7 @@ install_apt_packages_nice_terminal () {
     "
 
   printf "Installing apt packages [terminal apps] ............................ "
-  apt install -y $apt_nice_terminal_apps &> /dev/null
+  apt-get install -y $apt_nice_terminal_apps &> /dev/null
   printf "OK\n"
 }
 
@@ -155,7 +155,7 @@ install_apt_packages_gaming () {
     "
 
   printf "Installing apt packages [gaming] ................................... "
-  apt install -y $apt_gaming &> /dev/null
+  apt-get install -y $apt_gaming &> /dev/null
   printf "OK\n"
 }
 
