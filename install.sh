@@ -1,32 +1,46 @@
 #!/bin/bash
 
 
+kobots_share_drives () {
+  if [[ ! -f /home/$user/.config/.kobots-credentials ]]; then
+    printf "\nMissing credentials file for network drives"
+    exit 1
+  fi
+
+  printf "Adding fstab network drive entries ................................. "
+
+  printf "# User added network drives\n" >> /etc/fstab
+  printf "//192.168.147.2/Company /mnt/company-share cifs credentials=/home/$user/.config/.kobots-credentials,iocharset=utf8,file_mode=0777,dir_mode=0666,uid=$user,gid=$user,noperm,nofail,_netdev 0 0\n" >> /etc/fstab
+  printf "//192.168.147.2/Development /mnt/development-share cifs credentials=/home/$user/.config/.kobots-credentials,iocharset=utf8,file_mode=0777,dir_mode=0666,uid=$user,gid=$user,noperm,nofail,_netdev 0 0\n" >> /etc/fstab
+  printf "//192.168.147.2/UserShares/sr /mnt/$user-share cifs credentials=/home/$user/.config/.kobots-credentials,iocharset=utf8,file_mode=0777,dir_mode=0666,uid=$user,gid=$user,noperm,nofail,_netdev 0 0\n" >> /etc/fstab
+
+  printf "OK\n"
+}
+
 git_ssh_setup () {
   apt-get install git openssh-client
 
   printf "Adding git configuration files ..................................... "
 
-  if [[ ! -f $PWD/ssh/id_rsa || ! -f $PWD/ssh/id_rsa.pub ]]; then
-    printf "\nMissing base SSH key for github setup!"
+  if [[ ! -f /home/$user/.ssh/id_rsa || ! -f /home/$user/.ssh/id_rsa.pub ]]; then
+    printf "\nMissing base SSH key for github setup"
     exit 1
   fi
 
-  home_git_config="\
+  printf "\
 [user]
   name = $user
-  email = $user@kobots.dk"
+  email = $user@kobots.dk
+" > /home/$user/.gitconfig
 
-  ssh_git_config="\
+  printf "\
 Host github.com-kobots-*
   User $user@kobots.dk
   Hostname github.com
-  PreferredAuthentication publickey
   IdentityFile /home/$user/.ssh/id_rsa.pub
-  IdentitiesOnly yes"
+  IdentitiesOnly yes
+" > /home/$user/.ssh/config
   
-  printf "%s" $home_git_config >> /home/$user/.gitconfig
-  printf "%s" $ssh_git_config >> /home/$user/.ssh/config
-
   printf "OK\n"
 }
 
@@ -208,20 +222,24 @@ replace_firefox_snap_with_dpkg () {
     exit 1
   fi
 
-  snap remove --purge firefox
-  apt-get remove -y --purge firefox
+  printf "Replacing firefox snap with deb-pkg................................. "
+
+  snap remove --purge firefox &> /dev/null
+  apt-get remove -y --purge firefox &> /dev/null
   rm -r /home/$user/snap/firefox
   rm -r /home/$user/Downloads/firefox.tmp
-  add-apt-repository -y ppa:mozillateam/firefox-next 
-  
-  firefox_apt_preference="\
+  add-apt-repository -y ppa:mozillateam/firefox-next &> /dev/null
+
+  printf "\
 Package: firefox*
 Pin: release o=Ubuntu*
-Pin-Priority: -1"
+Pin-Priority: -1
+" > /etc/apt/preferences.d/firefox-no-snap
 
-  printf $firefox_apt_preference >> /etc/apt/preferences.d/firefox-no-snap
-  apt-get update
-  apt-get install -y firefox
+  apt-get update &> /dev/null
+  apt-get install -y firefox &> /dev/null
+
+  print "OK\n"
 }
 
 configure_xfconf () {
@@ -333,20 +351,24 @@ install_meslo_lgs_font () {
 install_alacritty_source () {
   printf "Installing alacritty from source ................................... "
 
+  apt-get install -y git curl cmake cargo pkg-config libfreetype6-dev \
+    libfontconfig1-dev libxcb-xfixes0-dev libxkbcommon-dev python3 &> /dev/null
+
+  apt-get remove --purge -y rustc libstd-rust-* &> /dev/null
+
   # Clone repo
   cd /home/$user
-  su $user -c "git clone https://github.com/alacritty/alacritty.git"
+  su $user sh -c "git clone https://github.com/alacritty/alacritty.git" &> /dev/null
   cd /home/$user/alacritty
 
   # Install rustup
-  su $user -c "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
+  sudo -u $user sh -c "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
   source /home/$user/.cargo/env
-  su $user -c "rustup override set stable"
-  su $user -c "rustup update stable"
+  su $user sh -c "rustup override set stable" &> /dev/null
+  su $user sh -c "rustup update stable" &> /dev/null
 
   # Build alacritty
-  apt-get install -y cmake pkg-config libfreetype6-dev libfontconfig1-dev libxcb-xfixes0-dev libxkbcommon-dev python3
-  su $user -c "cargo build --release"
+  su $user sh -c "cargo build --release" &> /dev/null
 
   # Add terminfo
   if [[ ! $(infocmp alacritty) ]]; then
@@ -354,9 +376,9 @@ install_alacritty_source () {
   fi
 
   # Add desktop entry
-  cp target/release/alacritty /usr/local/bin
-  cp extra/logo/alacritty-term.svg /usr/share/pixmaps/Alacritty.svg
-  desktop-file-install extra/linux/Alacritty.desktop
+  cp -f ./target/release/alacritty /usr/local/bin
+  cp -f ./extra/logo/alacritty-term.svg /usr/share/pixmaps/Alacritty.svg
+  desktop-file-install ./extra/linux/Alacritty.desktop
   update-desktop-database
 
   cd $working_dir
@@ -365,6 +387,7 @@ install_alacritty_source () {
 
 install_terminal () {
   # Add check for zsh installed in dpkg
+  apt-get install -y zsh zsh-syntax-highlighting zsh-autosuggestions tmux
 
   # printf "Installing alacritty from snap ..................................... "
   # snap install alacritty --classic &> /dev/null
@@ -395,7 +418,8 @@ install_terminal () {
   printf "OK\n"
 
   printf "Setting alacritty as default user terminal ......................... "
-  xdg_alacritty_desktop="\
+  mkdir -p /home/$user/.local/share/xfce4/helpers
+  printf "\
 [Desktop Entry]
 NoDisplay=true
 Version=1.0
@@ -405,9 +429,9 @@ X-XFCE-Category=TerminalEmulator
 X-XFCE-CommandsWithParameter=/usr/local/bin/alacritty \"%s\"
 X-XFCE-Commands=/usr/local/bin/alacritty
 Icon=alacritty
-Name=alacritty"
-  printf "%s" $xdg_alacritty_desktop >> /home/$user/.local/share/xfce4/helpers/alacritty-TerminalEmulator.desktop
-  printf "TerminalEmulator=alacritty-TerminalEmulator.desktop" >> /home/$user/.config/xfce4/helpers.rc
+Name=alacritty
+" > /home/$user/.local/share/xfce4/helpers/alacritty-TerminalEmulator.desktop
+  printf "TerminalEmulator=alacritty-TerminalEmulator.desktop\n" >> /home/$user/.config/xfce4/helpers.rc
   printf "OK\n"
 }
 
@@ -418,7 +442,7 @@ install_user_aliases () {
   user_aliases[2]="cdw='cd /home/$user/workspace'"
   user_aliases[3]="ipy='ipython3'"
   user_aliases[4]="py='python3'"
-  user_aliases[5]="zrcros='source /opt/ros/humble/setup.zsh'"
+  user_aliases[5]="srcros='source /opt/ros/humble/setup.zsh'"
   for ualias in "${user_aliases[@]}"; do
     echo "alias $ualias" >> /home/$user/.oh-my-zsh/custom/aliases.zsh
   done
