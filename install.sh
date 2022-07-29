@@ -1,44 +1,44 @@
 #!/bin/bash
 
 kobots_share_drives () {
-  if [[ ! -f /home/$user/.config/.kobots-credentials ]]; then
+  if [[ ! -f /home/$USER/.config/.kobots-credentials ]]; then
     printf "\nMissing credentials file for network drives"
     exit 1
   fi
 
+  apt-get install -y cifs-utils &> /dev/null
   printf "Adding fstab network drive entries ................................. "
 
   printf "# User added network drives\n" >> /etc/fstab
-  printf "//192.168.147.2/Company /mnt/company-share cifs credentials=/home/$user/.config/.kobots-credentials,iocharset=utf8,file_mode=0777,dir_mode=0666,uid=$user,gid=$user,noperm,nofail,_netdev 0 0\n" >> /etc/fstab
-  printf "//192.168.147.2/Development /mnt/development-share cifs credentials=/home/$user/.config/.kobots-credentials,iocharset=utf8,file_mode=0777,dir_mode=0666,uid=$user,gid=$user,noperm,nofail,_netdev 0 0\n" >> /etc/fstab
-  printf "//192.168.147.2/UserShares/sr /mnt/$user-share cifs credentials=/home/$user/.config/.kobots-credentials,iocharset=utf8,file_mode=0777,dir_mode=0666,uid=$user,gid=$user,noperm,nofail,_netdev 0 0\n" >> /etc/fstab
+  printf "//192.168.147.2/Company /mnt/company-share cifs credentials=/home/$USER/.config/.kobots-credentials,iocharset=utf8,file_mode=0777,dir_mode=0666,uid=$USER,gid=$USER,noperm,nofail,_netdev 0 0\n" >> /etc/fstab
+  printf "//192.168.147.2/Development /mnt/development-share cifs credentials=/home/$USER/.config/.kobots-credentials,iocharset=utf8,file_mode=0777,dir_mode=0666,uid=$USER,gid=$USER,noperm,nofail,_netdev 0 0\n" >> /etc/fstab
+  printf "//192.168.147.2/UserShares/sr /mnt/$USER-share cifs credentials=/home/$USER/.config/.kobots-credentials,iocharset=utf8,file_mode=0777,dir_mode=0666,uid=$USER,gid=$USER,noperm,nofail,_netdev 0 0\n" >> /etc/fstab
 
   printf "OK\n"
 }
 
 git_ssh_setup () {
-  apt-get install git openssh-client
+  apt-get install -y git openssh-client gnupg
+
+  # Requires:
+  #   USER
+  #   USER_EMAIL
+  #   GPG_SIGNINGKEY
+  #   SSH_PUBKEY
 
   printf "Adding git configuration files ..................................... "
 
-  if [[ ! -f /home/$user/.ssh/id_rsa || ! -f /home/$user/.ssh/id_rsa.pub ]]; then
-    printf "\nMissing base SSH key for github setup"
-    exit 1
-  fi
-
-  printf "\
-[user]
-  name = $user
-  email = $user@kobots.dk
-" > /home/$user/.gitconfig
+  sudo -su $USER sh -c "git config --global user.name $USER"
+  sudo -su $USER sh -c "git config --global user.email $USER_EMAIL"
+  sudo -su $USER sh -c "git config --global user.signingkey $GPG_SIGNINGKEY"
 
   printf "\
 Host github.com-kobots-*
-  User $user@kobots.dk
+  User $USER_EMAIL
   Hostname github.com
-  IdentityFile /home/$user/.ssh/id_rsa.pub
+  IdentityFile /home/$USER/.ssh/$SSH_PUBKEY
   IdentitiesOnly yes
-" > /home/$user/.ssh/config
+" > /home/$USER/.ssh/config
   
   printf "OK\n"
 }
