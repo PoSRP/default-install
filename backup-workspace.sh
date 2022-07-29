@@ -1,18 +1,18 @@
 #!/usr/bin/bash
 
-# Incremental backup of /home/<user>/workspace
+# Incremental backup of /home/<user>/workspace to /opt/user-backup and /mnt/<user>-share/backups/workspace
 
 set -o errexit
 set -o nounset
 set -o pipefail
 
 readonly source_dir="/home/<user>/workspace"
-readonly backup_dir="/mnt/<user>-backups/workspace"
-readonly log_dir="/mnt/<user>-backups/workspace/logs"
+readonly backup_dir="/opt/user-backup/workspace"
+readonly log_dir="/opt/user-backup/workspace/logs"
 readonly datetime="$(date '+%Y-%m-%d_%H')"
 readonly backup_path="${backup_dir}/${datetime}"
 readonly latest_link="${backup_dir}/latest"
-readonly exclude_file="/etc/<user>-backups/backup-workspace-exclude.txt"
+readonly exclude_file="/opt/user-backup/backup-exclude.txt"
 
 readonly server_backup_dir="/mnt/<user>-share/backups/workspace"
 readonly server_backup_path="${server_backup_dir}/${datetime}"

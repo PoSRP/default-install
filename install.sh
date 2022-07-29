@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 kobots_share_drives () {
   if [[ ! -f /home/$user/.config/.kobots-credentials ]]; then
     printf "\nMissing credentials file for network drives"
@@ -467,9 +466,12 @@ install_ros2_humble () {
   apt-get install -y locales &> /dev/null
   locale-gen en_US en_US.UTF-8 &> /dev/null
   update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 &> /dev/null
-  echo "# User added - ROS2" >> /home/$user/.zshrc
-  echo "export LANG=en_US.UTF-8" >> /home/$user/.zshrc
-  echo "export ROS_DOMAIN_ID=0" >> /home/$user/.zshrc
+
+  printf "\n# User added - ROS2\n" >> /home/$user/.zshrc
+  printf "export LANG=en_US.UTF-8\n" >> /home/$user/.zshrc
+  printf "export ROS_DOMAIN_ID=0\n" >> /home/$user/.zshrc
+  printf "export ROSCONSOLE_FORMAT='\${logger}: \${message}'\n" >> /home/$user/.zshrc
+
   curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o \
     /usr/share/keyrings/ros-archive-keyring.gpg &> /dev/null
   echo "deb [arch=$(dpkg --print-architecture) \
@@ -512,7 +514,8 @@ install_eclipse_cpp_2022_03 () {
   chown -R $user:$user /home/$user
   rm -rf $tmp_dir/eclipse.tar.gz
   mkdir -p /home/$user/.local/share/applications
-  echo "[Desktop Entry]
+  printf "\
+[Desktop Entry]
   Encoding=UTF-8
   Version=2022.03
   Type=Application
@@ -521,8 +524,9 @@ install_eclipse_cpp_2022_03 () {
   Exec=/home/$user/eclipse/eclipse
   Name=Eclipse 2022.03
   Icon=/home/$user/eclipse/icon.xpm
-  " >> /home/$user/.local/share/applications/eclipse.desktop
+" > /home/$user/.local/share/applications/eclipse.desktop
   chown -R $user:$user /home/$user/.local/share/applications
+  ln -s /home/$user/eclipse/eclipse /usr/sbin/eclipse
   printf "OK\n"
 }
 
@@ -548,8 +552,108 @@ install_rstudio () {
   printf "OK\n"
 }
 
+install_backup_script () {
+  printf "Installing backup script ........................................... "
+
+  mkdir -p /opt/user-backup
+  cp $working_dir/backup-workspace.sh /opt/user-backup/backup-script.sh
+  cp $working_dir/backup-workspace-exclude.txt /opt/user-backup/backup-exclude.txt
+
+  sed -i "s/<user>/$user/g" /opt/user-backup/backup-scripts.sh
+
+  chown -R $user:$user /opt/user-backup
+  chmod +x /opt/user-backup/backup-script.sh
+
+  su $user sh -c "crontab -l > $tmp_dir/crontab_new"
+  printf "0 * * * * /opt/user-backup/backup-script.sh\n" >> $tmp_dir/crontab_new
+
+  printf "OK\n"
+}
 
 
+install_rt_kernel () {
+
+$ sudo apt-get install fakeroot flex bison build-essential libncurses-dev xz-utils libssl-dev bc libelf-dev
+
+$ mkdir ~/kernel
+$ cd ~/kernel
+
+$ wget https://mirrors.edge.kernel.org/pub/linux/kernel/v5.x/linux-5.15.55.tar.xz
+$ wget https://cdn.kernel.org/pub/linux/kernel/projects/rt/5.15/patch-5.15.55-rt48.patch.xz
+
+$ xz -cd linux-5.15.55.tar.xz | tar xvf -
+$ cd linux-5.15.55
+$ xzcat ../patch-5.15.55-rt48.patch.xz | patch -p1
+$ cp /boot/config-$(uname -r) .config
+$ yes '' | make oldconfig
+
+$ scripts/config --disable DEBUG_INFO_BTF
+$ scripts/config --set-str SYSTEM_TRUSTED_KEYS ""
+$ scripts/config --set-str SYSTEM_REVOCATION_KEYS ""
+
+$ make menuconfig
+
+##  General setup ->
+##    Preemption Model ->
+##      Fully Preemptible Kernel (Real-Time)
+##    Timers subsystem ->
+##      Timer tick handling ->
+##        Full dynticks system (tickless)
+##      High Resolution Timer Support ->
+##        Tick this box
+##  Processor type and features ->
+##    Timer frequency ->
+##      1000 HZ
+##  Power management and ACPI options ->
+##    CPU Frequency scaling ->
+##      Default CPUFreq governor ->
+##        performance
+
+$ make -j $((`nproc` - 1)) deb-pkg
+$ sudo dpkg -i ../*.deb
+
+  mkdir ~/kernel
+  cd ~/kernel
+  printf "\
+    HOME                    = .
+    RANDFILE                = $ENV::HOME/.rnd
+    [ req ]
+    distinguished_name      = req_distinguished_name
+    x509_extensions         = v3
+    string_mask             = utf8only
+    prompt                  = no
+    
+    [ req_distinguished_name ]
+    countryName             = DK
+    stateOrProvinceName     = Fyn
+    localityName            = Odense
+    0.organizationName      = Soeren Riisom Pedersen
+    commonName              = Secure Boot Signing Key
+    emailAddress            = soerenriisom@gmail.com
+    
+    [ v3 ]
+    subjectKeyIdentifier    = hash
+    authorityKeyIdentifier  = keyid:always,issuer
+    basicConstraints        = critical,CA:FALSE
+    extendedKeyUsage        = codeSigning,1.3.6.1.4.1.311.10.3.6
+    nsComment               = 'OpenSSL Generated Certificate' 
+    " > ~/kernel/mokconfig.cnf
+
+  chown $user:$user ~/kernel
+  chown $user:$user ~/kernel/mokconfig.cnf
+
+  su $user sh -c "openssl req -config ./mokconfig.cnf -new -x509 -newkey rsa:2048 -nodes -days 36500 -outform DER -keyout 'MOK.priv' -out 'MOK.der'"
+  su $user sh -c "openssl x509 -in MOK.der -inform DER -outform PEM -out MOK.pem"
+
+  mokutil --import MOK.der
+  sbsign --key MOK.priv --cert MOK.pem /boot/vmlinuz-5.15.55-rt48 --output /boot/vmlinuz-5.15.55-rt48.signed
+  cp /boot/initrd.img-5.15.55-rt48{,.signed}
+  update-grub
+
+  mv /boot/vmlinuz-5.15.55-rt48{.signed,}
+  mv /boot/initrd.img-5.15.55-rt48{.signed,}
+  update-grub
+}
 
 
 ###############################################################################
