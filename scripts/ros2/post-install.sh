@@ -2,52 +2,31 @@
 
 set -e
 
-test_rosdep_init () {
-  rosdep init
-  rosdep update
-}
+case $SHELL in 
+  */bash)
+    SHELL_TYPE=bash;;
+    RCFILE=/home/$USER/.bashrc;;
+  */zsh)
+    SHELL_TYPE=zsh;;
+    RCFILE=/home/$USER/.zshrc;;
+  *)
+    SHELL_TYPE=sh;;
+esac
 
-test_ros_setup () {
-  case $SHELL in 
-    */bash)
-      SHELL_TYPE=bash;;
-    */zsh)
-      SHELL_TYPE=zsh;;
-    *)
-      SHELL_TYPE=sh;;
-  esac
-  [ -f /opt/ros/humble/setup.$SHELL_TYPE ] && exit 1
-}
+[ -f /opt/ros/humble/setup.$SHELL_TYPE ] && exit 1
+[ -f $RCFILE ] && printf "NO RC FILE FOUND!\n"
 
-test_shell_export () {
-  case $SHELL in 
-    */sh)
-      exit 1;;
-    */bash)
-      RCFILE=/home/$USER/.bashrc;;
-    */zsh)
-      RCFILE=/home/$USER/.zshrc;;
-    *)
-      exit 1;;
-  esac
+rosdep init
+rosdep update
   
-  printf "
-  # User added - ROS2
-  export LANG=en_US.UTF-8
-  export ROS_DOMAIN_ID=0
-  export ROSCONSOLE_FORMAT='\${logger}: \${message}'
-  export ROS_SECURITY_KEYSTORE=
-  export ROS_SECURITY_ENABLE=
-  export ROS_SECURITY_STRATEGY=
-  " >> $RCFILE
-}
-
-#################
-
-test_ros_setup
-
-test_rosdep_init
-
-test_shell_export
+printf "
+# User added - ROS2
+export LANG=en_US.UTF-8
+export ROS_DOMAIN_ID=0
+export ROSCONSOLE_FORMAT='\${logger}: \${message}'
+export ROS_SECURITY_KEYSTORE=
+export ROS_SECURITY_ENABLE=
+export ROS_SECURITY_STRATEGY=
+" >> $RCFILE
 
 exit 0
