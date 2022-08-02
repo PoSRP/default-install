@@ -2,8 +2,8 @@
 
 set -e
 
-apt-get update -q
-apt-get install -qy locales
+apt-get update -qq
+apt-get install -qq locales
 locale-gen en_US en_US.UTF-8
 update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 
@@ -14,7 +14,7 @@ echo "deb [arch=$(dpkg --print-architecture) \
   http://packages.ros.org/ros2/ubuntu jammy main" | \
   tee /etc/apt/sources.list.d/ros2.list &> /dev/null
 
-apt-get update -q
+apt-get update -qq
 apt-get install -qy ros-humble-desktop
 apt-get install -qy python3-colcon-ros python3-colcon-bash python3-colcon-zsh python3-rosdep
 

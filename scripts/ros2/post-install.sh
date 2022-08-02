@@ -4,10 +4,10 @@ set -e
 
 case $SHELL in 
   */bash)
-    SHELL_TYPE=bash;;
+    SHELL_TYPE=bash
     RCFILE=/home/$USER/.bashrc;;
   */zsh)
-    SHELL_TYPE=zsh;;
+    SHELL_TYPE=zsh
     RCFILE=/home/$USER/.zshrc;;
   *)
     SHELL_TYPE=sh;;
