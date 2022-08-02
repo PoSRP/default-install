@@ -2,14 +2,20 @@ name: Testing default install
 on: [push]
 jobs:
   install-ros2:
-    name: Building and testing C++ project
+    name: Testing ROS2 install scripts
     runs-on: ubuntu-22.04
     steps:
       - name: Check-out repository
         uses: actions/checkout@v3
-      - name: Installing ROS2
-        run: sudo ./scripts/install-ros2-humble.sh
+      - name: Installing
+        run: sudo ./scripts/ros2/install.sh
         shell: sh
-      - name: Adding ROS env exports
-        run: ./scripts/install-ros2-exports.sh
+      - name: ENV exports - sh
+        run: ./scripts/ros2/add-exports.sh
         shell: sh
+      - name: ENV exports - bash
+        run: ./scripts/ros2/add-exports.sh
+        shell: bash
+      - name: ENV exports - zsh
+        run: ./scripts/ros2/add-exports.sh
+        shell: zsh
