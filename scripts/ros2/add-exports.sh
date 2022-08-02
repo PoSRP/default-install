@@ -2,9 +2,6 @@
 
 set -e
 
-apt-get update
-apt-get install -y libssl-dev
-
 case $SHELL in 
   */sh)
     exit 1;;
