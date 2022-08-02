@@ -19,7 +19,5 @@ apt-get upgrade -y
 apt-get install -y ros-humble-desktop
 
 apt-get install -y python3-colcon-ros python3-colcon-bash python3-colcon-zsh python3-rosdep
-rosdep init
-rosdep update
 
 exit 0

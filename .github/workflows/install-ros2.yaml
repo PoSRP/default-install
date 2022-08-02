@@ -1,5 +1,6 @@
 name: Testing default install
 on: [push]
+
 jobs:
   install-ros2:
     name: Testing ROS2 install scripts
@@ -10,12 +11,6 @@ jobs:
       - name: Installing
         run: sudo ./scripts/ros2/install.sh
         shell: sh
-      - name: ENV exports - sh
-        run: ./scripts/ros2/add-exports.sh
+      - name: Post install
+        run: ./scripts/ros2/post-install.sh
         shell: sh
-      - name: ENV exports - bash
-        run: ./scripts/ros2/add-exports.sh
-        shell: bash
-      - name: ENV exports - zsh
-        run: ./scripts/ros2/add-exports.sh
-        shell: zsh
