@@ -1,7 +1,6 @@
 #!/usr/bin/bash
 
 set -e
-[ $(source /etc/os-release && echo $UBUNTU_CODENAME) == "jammy" ] && exit 1
 
 apt-get update
 apt-get install -y locales
@@ -12,8 +11,7 @@ curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o \
   /usr/share/keyrings/ros-archive-keyring.gpg &> /dev/null
 echo "deb [arch=$(dpkg --print-architecture) \
   signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] \
-  http://packages.ros.org/ros2/ubuntu \
-  $(source /etc/os-release && echo $UBUNTU_CODENAME) main" | \
+  http://packages.ros.org/ros2/ubuntu jammy main" | \
   tee /etc/apt/sources.list.d/ros2.list &> /dev/null
 
 apt-get update
