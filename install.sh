@@ -28,9 +28,14 @@ git_ssh_setup () {
 
   printf "Adding git configuration files ..................................... "
 
-  sudo -su $USER sh -c "git config --global user.name $USER"
-  sudo -su $USER sh -c "git config --global user.email $USER_EMAIL"
-  sudo -su $USER sh -c "git config --global user.signingkey $GPG_SIGNINGKEY"
+  printf """
+[commit]
+  gpgsign = true
+[user]
+  signingkey = $GPG_SIGNINGKEY
+  name = $USER
+  email = $USER_EMAIL
+""" >> /home/$USER/.gitconfig
 
   printf "\
 Host github.com-kobots-*
@@ -38,15 +43,15 @@ Host github.com-kobots-*
   Hostname github.com
   IdentityFile /home/$USER/.ssh/$SSH_PUBKEY
   IdentitiesOnly yes
-" > /home/$USER/.ssh/config
+" >> /home/$USER/.ssh/config
   
   printf "OK\n"
 }
 
 user_no_sudo () {
-  printf "Adding user to NO PASSWORD SUDO [NOT SECURE] ....................... "
-  printf "%s ALL=(ALL) NOPASSWD:ALL\n" $user > /etc/sudoers.d/$user-nopasswd
-  chmod 0440 /etc/sudoers.d/$user-nopasswd
+  printf "Adding $USER to NO PASSWORD SUDO [NOT SECURE] ....................... "
+  printf "%s ALL=(ALL) NOPASSWD:ALL\n" $USER > /etc/sudoers.d/$USER-nopasswd
+  chmod 0440 /etc/sudoers.d/$USER-nopasswd
   printf "OK\n"
 }
 
@@ -58,16 +63,16 @@ set_mesa_i965_driver () {
 
 initial_apt () {
   printf "Updating apt ....................................................... "
-  apt-get update &> /dev/null
+  apt-get update -qq
   printf "OK\n"
   
   printf "Upgrading apt ...................................................... "
-  apt-get upgrade -y &> /dev/null
+  apt-get upgrade -qq
   printf "OK\n"
   
   printf "Adding the universe repository ..................................... "
-  add-apt-repository -y universe &> /dev/null
-  apt-get update &> /dev/null
+  add-apt-repository -qqy universe
+  apt-get update -qq
   printf "OK\n"
 }
 
@@ -108,7 +113,7 @@ install_apt_packages_essential () {
     "
 
   printf "Installing apt packages [essentials] ............................... "
-  apt-get install -y $apt_essentials &> /dev/null
+  apt-get install -qq $apt_essentials
   printf "OK\n"
 }
 
@@ -139,7 +144,7 @@ install_apt_packages_devtools () {
     "
 
   printf "Installing apt packages [devtools] ................................. "
-  apt-get install -y $apt_devtools &> /dev/null
+  apt-get install -qq $apt_devtools
   printf "OK\n"
 }
 
@@ -169,7 +174,7 @@ install_apt_packages_nice_desktop () {
     "
 
   printf "Installing apt packages [desktop apps] ............................. "
-  apt-get install -y $apt_nice_desktop_apps &> /dev/null
+  apt-get install -qq $apt_nice_desktop_apps
   printf "OK\n"
 }
 
@@ -186,7 +191,7 @@ install_apt_packages_nice_terminal () {
     "
 
   printf "Installing apt packages [terminal apps] ............................ "
-  apt-get install -y $apt_nice_terminal_apps &> /dev/null
+  apt-get install -qq $apt_nice_terminal_apps
   printf "OK\n"
 }
 
@@ -197,90 +202,68 @@ install_apt_packages_gaming () {
     "
 
   printf "Installing apt packages [gaming] ................................... "
-  apt-get install -y $apt_gaming &> /dev/null
+  apt-get install -qq $apt_gaming
   printf "OK\n"
 }
 
 install_apt_package_wireshark () {
   printf "Installing wireshark - This adds the user to the wireshark group ... "
   printf "wireshark-common wireshark-common/install-setuid boolean true" | debconf-set-selections
-  DEBIAN_FRONTEND=noninteractive apt-get install -y wireshark &> /dev/null
+  DEBIAN_FRONTEND=noninteractive apt-get install -qq wireshark
   usermod -aG wireshark $user
   printf "OK\n"
 }
 
 ending_apt () {
   printf "Running apt auto-remove ............................................ "
-  apt-get autoremove -y &> /dev/null
+  apt-get autoremove -qq
   printf "OK\n"
-}
-
-replace_firefox_snap_with_dpkg () {
-  if [[ $user == "" ]]; then
-    printf "Missing user environment variable when installing firefox!"
-    exit 1
-  fi
-
-  printf "Replacing firefox snap with deb-pkg................................. "
-
-  snap remove --purge firefox &> /dev/null
-  apt-get remove -y --purge firefox &> /dev/null
-  rm -r /home/$user/snap/firefox
-  rm -r /home/$user/Downloads/firefox.tmp
-  add-apt-repository -y ppa:mozillateam/firefox-next &> /dev/null
-
-  printf "\
-Package: firefox*
-Pin: release o=Ubuntu*
-Pin-Priority: -1
-" > /etc/apt/preferences.d/firefox-no-snap
-
-  apt-get update &> /dev/null
-  apt-get install -y firefox &> /dev/null
-
-  print "OK\n"
 }
 
 configure_xfconf () {
   printf "Configuring xfconf settings ........................................ "
   
-  su $user sh -c "xfconf-query -c xfce4-power-manager -pn /xfce4-power-manager/blank-on-ac -t int -s 0" &> /dev/null
-  su $user sh -c "xfconf-query -c xfce4-power-manager -pn /xfce4-power-manager/blank-on-battery -t int -s 0" &> /dev/null
-  su $user sh -c "xfconf-query -c xfce4-power-manager -pn /xfce4-power-manager/dpms-enabled -t bool -s false" &> /dev/null
-  su $user sh -c "xfconf-query -c xfce4-power-manager -pn /xfce4-power-manager/dpms-on-ac-off -t int -s 0" &> /dev/null
-  su $user sh -c "xfconf-query -c xfce4-power-manager -pn /xfce4-power-manager/dpms-on-ac-sleep -t int -s 0" &> /dev/null
-  su $user sh -c "xfconf-query -c xfce4-power-manager -pn /xfce4-power-manager/dpms-on-battery-off -t int -s 0" &> /dev/null
-  su $user sh -c "xfconf-query -c xfce4-power-manager -pn /xfce4-power-manager/dpms-on-battery-sleep -t int -s 0" &> /dev/null
-  su $user sh -c "xfconf-query -c xfce4-power-manager -pn /xfce4-power-manager/inactivity-sleep-mode-on-ac -t int -s 1" &> /dev/null
-  su $user sh -c "xfconf-query -c xfce4-power-manager -pn /xfce4-power-manager/inactivity-sleep-mode-on-battery -t int -s 1" &> /dev/null
+  su $user sh -c "xfconf-query -c xfce4-power-manager -pn /xfce4-power-manager/blank-on-ac -t int -s 0"
+  su $user sh -c "xfconf-query -c xfce4-power-manager -pn /xfce4-power-manager/blank-on-battery -t int -s 0"
+  su $user sh -c "xfconf-query -c xfce4-power-manager -pn /xfce4-power-manager/dpms-enabled -t bool -s false"
+  su $user sh -c "xfconf-query -c xfce4-power-manager -pn /xfce4-power-manager/dpms-on-ac-off -t int -s 0"
+  su $user sh -c "xfconf-query -c xfce4-power-manager -pn /xfce4-power-manager/dpms-on-ac-sleep -t int -s 0"
+  su $user sh -c "xfconf-query -c xfce4-power-manager -pn /xfce4-power-manager/dpms-on-battery-off -t int -s 0"
+  su $user sh -c "xfconf-query -c xfce4-power-manager -pn /xfce4-power-manager/dpms-on-battery-sleep -t int -s 0"
+  su $user sh -c "xfconf-query -c xfce4-power-manager -pn /xfce4-power-manager/inactivity-sleep-mode-on-ac -t int -s 1"
+  su $user sh -c "xfconf-query -c xfce4-power-manager -pn /xfce4-power-manager/inactivity-sleep-mode-on-battery -t int -s 1"
   
-  su $user sh -c "xfconf-query -c xfce4-screensaver -pn /lock/enabled -t bool -s false" &> /dev/null
-  su $user sh -c "xfconf-query -c xfce4-screensaver -pn /saver/enabled -t bool -s false" &> /dev/null
+  su $user sh -c "xfconf-query -c xfce4-screensaver -pn /lock/enabled -t bool -s false"
+  su $user sh -c "xfconf-query -c xfce4-screensaver -pn /saver/enabled -t bool -s false"
   
-  su $user sh -c "xfconf-query -c xfce4-keyboard-shortcuts -pn /commands/custom/\<Primary\>\<Alt\>t -t string -s alacritty" &> /dev/null
-  su $user sh -c "xfconf-query -c xfce4-keyboard-shortcuts -pn /commands/custom/\<Super\>t -t string -s alacritty" &> /dev/null
-  su $user sh -c "xfconf-query -c xfce4-keyboard-shortcuts -pn /commands/custom/\<Super\>e -t string -s subl" &> /dev/null
+  su $user sh -c "xfconf-query -c xfce4-keyboard-shortcuts -pn /commands/custom/\<Primary\>\<Alt\>t -t string -s alacritty"
+  su $user sh -c "xfconf-query -c xfce4-keyboard-shortcuts -pn /commands/custom/\<Super\>t -t string -s alacritty"
+  su $user sh -c "xfconf-query -c xfce4-keyboard-shortcuts -pn /commands/custom/\<Super\>e -t string -s subl"
   
-  su $user sh -c "xfconf-query -c xfce4-appfinder -pn /actions/action-2/command -t string -s 'alacritty %s'" &> /dev/null
-  su $user sh -c "xfconf-query -c xfce4-appfinder -pn /actions/action-4/command -t string -s 'alacritty man %s'" &> /dev/null
+  su $user sh -c "xfconf-query -c xfce4-appfinder -pn /actions/action-2/command -t string -s 'alacritty %s'"
+  su $user sh -c "xfconf-query -c xfce4-appfinder -pn /actions/action-4/command -t string -s 'alacritty man %s'"
   
-  su $user sh -c "xfconf-query -c xfwm4 -pn /general/cycle_preview -t bool -s true" &> /dev/null
-  su $user sh -c "xfconf-query -c xfwm4 -pn /general/cycle_tabwin_mode -t int -s 1" &> /dev/null
-  su $user sh -c "xfconf-query -c xfwm4 -pn /general/easy_click -t string -s Super" &> /dev/null
-  su $user sh -c "xfconf-query -c xfwm4 -pn /general/frame_opacity -t int -s 95" &> /dev/null
-  su $user sh -c "xfconf-query -c xfwm4 -pn /general/move_opacity -t int -s 85" &> /dev/null
-  su $user sh -c "xfconf-query -c xfwm4 -pn /general/resize_opcaity -t int -s 85" &> /dev/null
-  su $user sh -c "xfconf-query -c xfwm4 -pn /general/snap_to_windows -t bool -s true" &> /dev/null
-  su $user sh -c "xfconf-query -c xfwm4 -pn /general/theme -t string -s Greybird-dark" &> /dev/null
+  su $user sh -c "xfconf-query -c xfwm4 -pn /general/cycle_preview -t bool -s true"
+  su $user sh -c "xfconf-query -c xfwm4 -pn /general/cycle_tabwin_mode -t int -s 1"
+  su $user sh -c "xfconf-query -c xfwm4 -pn /general/easy_click -t string -s Super"
+  su $user sh -c "xfconf-query -c xfwm4 -pn /general/frame_opacity -t int -s 95"
+  su $user sh -c "xfconf-query -c xfwm4 -pn /general/move_opacity -t int -s 85"
+  su $user sh -c "xfconf-query -c xfwm4 -pn /general/resize_opcaity -t int -s 85"
+  su $user sh -c "xfconf-query -c xfwm4 -pn /general/snap_to_windows -t bool -s true"
+  su $user sh -c "xfconf-query -c xfwm4 -pn /general/snap_resist -t bool -s false"
+  su $user sh -c "xfconf-query -c xfwm4 -pn /general/snap_to_border -t bool -s true"
+  su $user sh -c "xfconf-query -c xfwm4 -pn /general/snap_to_windows -t bool -s true"
+  su $user sh -c "xfconf-query -c xfwm4 -pn /general/snap_width -t int -s 20"
+  su $user sh -c "xfconf-query -c xfwm4 -pn /general/theme -t string -s Greybird-dark"
   
-  su $user sh -c "xfconf-query -c keyboards -pn /Default/KeyRepeat/Delay -t int -s 300" &> /dev/null
-  su $user sh -c "xfconf-query -c keyboards -pn /Default/KeyRepeat/Rate -t int -s 80" &> /dev/null
+  su $user sh -c "xfconf-query -c keyboards -pn /Default/KeyRepeat/Delay -t int -s 300"
+  su $user sh -c "xfconf-query -c keyboards -pn /Default/KeyRepeat/Rate -t int -s 80"
   
-  su $user sh -c "xfconf-query -c xfce4-notifyd -pn /theme -t string -s 'Greybird-dark'" &> /dev/null
-  
-  sh $user sh -c "xfconf-query -c xsettings -pn /Net/ThemeName -t string -s 'Greybird-dark'" &> /dev/null  # GETS OVERWRITTEN OR DOES NOT WORK
-  
-  sh $user sh -c "xfconf-query -c thunar -pn /last-view -t string -s ThunarDetailsView" &> /dev/null
+  su $user sh -c "xfconf-query -c xfce4-notifyd -pn /theme -t string -s 'Greybird-dark'"
+
+  sh $user sh -c "xfconf-query -c xsettings -pn /Net/ThemeName -t string -s 'Greybird-dark'"
+
+  sh $user sh -c "xfconf-query -c thunar -pn /last-view -t string -s ThunarDetailsView"
   
   printf "OK\n"
 }

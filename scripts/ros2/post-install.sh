@@ -13,8 +13,18 @@ case $SHELL in
     SHELL_TYPE=sh;;
 esac
 
-[ -f /opt/ros/humble/setup.$SHELL_TYPE ] && exit 1
-[ -f $RCFILE ] && printf "NO RC FILE FOUND!\n"
+if [[ ! -f /opt/ros/humble/setup.$SHELL_TYPE ]]; then
+  printf "NO ROS2 HUMBLE SETUP FILE FOUND: /opt/ros/humble/setup.$SHELL_TYPE \n"
+  exit 1
+fi
+
+if [[ ! -f $RCFILE ]]; then
+  printf "NO RC FILE FOUND: $RCFILE \n"
+  exit 2
+fi
+
+# [ -f /opt/ros/humble/setup.$SHELL_TYPE ] && exit 1
+# [ -f $RCFILE ] && printf "NO RC FILE FOUND!\n"
 
 rosdep init
 rosdep update
