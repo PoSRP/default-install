@@ -150,6 +150,7 @@ install_apt_packages_devtools () {
 
 install_apt_packages_nice_desktop () {
   apt_nice_desktop_apps="\
+    atril \
     audacity \
     engrampa \
     filezilla \
@@ -556,7 +557,7 @@ install_backup_script () {
 
 install_rt_kernel () {
 
-$ sudo apt-get install fakeroot flex bison build-essential libncurses-dev xz-utils libssl-dev bc libelf-dev
+$ sudo apt-get install fakeroot flex bison build-essential libncurses-dev xz-utils libssl-dev bc libelf-dev libtinfo-dev
 
 $ mkdir ~/kernel
 $ cd ~/kernel
